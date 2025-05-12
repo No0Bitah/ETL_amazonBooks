@@ -32,18 +32,23 @@ def extract_data(num_books, config=None):
         response = requests.get(url, headers=headers)
 
         if response.status_code != 200:
-            print(f"Failed to retrieve page {page} — Status Code: {response.status_code}")
+            logger.error(f"Failed to retrieve page {page} — Status Code: {response.status_code}")
             break
-
+        
+        logger.info("Starting to parse books from amazon!")
         soup = BeautifulSoup(response.content, "html.parser")
         book_items = soup.select("div.s-result-item[data-component-type='s-search-result']")
 
+        logger.info(f"Parsing books from page {page}") 
         for book in book_items:
+
             title_tag = book.select_one("h2 span")
             author_tag = book.select_one(".a-color-secondary .a-size-base+ .a-size-base")
             price_tag = book.select_one(".a-price .a-offscreen")
+            reviews_num = book.select_one("span.a-size-base.s-underline-text")
             rating_tag = book.select_one(".a-icon-alt")
 
+            
             if title_tag and price_tag:
                 title = title_tag.get_text(strip=True)
                 if title not in seen_titles:
@@ -56,6 +61,7 @@ def extract_data(num_books, config=None):
                                 "Title": title,
                                 "Author": author_tag.get_text(strip=True) if author_tag else "N/A",
                                 "Price": price_tag.get_text(strip=True),
+                                "Reviews": reviews_num.get_text(strip=True) if author_tag else "N/A",
                                 "Rating": rating_tag.get_text(strip=True) if rating_tag else "N/A"
                             })
 
@@ -64,15 +70,18 @@ def extract_data(num_books, config=None):
 
         page += 1
 
+    # creating dataframe
     df = pd.DataFrame(results)
-
-    # Remove duplicates based on 'Title' column
-    df.drop_duplicates(subset="Title", inplace=True)
 
     # Create raw data directory if it doesn't exist
     raw_dir = config['raw_data_path']
     os.makedirs(raw_dir, exist_ok=True)
     output_file = os.path.join(raw_dir, f"Books.csv")
 
+    logger.info(f"Creating Books.csv file") 
+
     df.to_csv(output_file, index=False)
+
+    logger.info(f"Books.csv file created in {raw_dir}") 
+
 
