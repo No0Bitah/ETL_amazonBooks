@@ -12,12 +12,13 @@ from datetime import datetime, timedelta
 
 
 from extract import extract_data
-# from transform import transform_data  
-# from load import load_data
+from transform import transform_data  
+from load import load_data
 
 
 CONFIG = {
     'raw_data_path': '/opt/airflow/data/raw',
+    'processed_data_path': '/opt/airflow/data/processed',
 
 }
 
@@ -47,20 +48,19 @@ extract_task = PythonOperator(
     dag=dag,
 )
 
-# transform_task = PythonOperator(
-#     task_id='transform_covid_data',
-#     python_callable=transform_data,
-#     op_kwargs={'config': CONFIG},
-#     dag=dag,
-# )
+transform_task = PythonOperator(
+    task_id='transform_covid_data',
+    python_callable=transform_data,
+    op_kwargs={'config': CONFIG},
+    dag=dag,
+)
 
-# load_task = PythonOperator(
-#     task_id='load_covid_data',
-#     python_callable=load_data,
-#     op_kwargs={'config': CONFIG},
-#     dag=dag,
-# )
+load_task = PythonOperator(
+    task_id='load_covid_data',
+    python_callable=load_data,
+    op_kwargs={'config': CONFIG},
+    dag=dag,
+)
 
 # # Define the task dependencies
-extract_task
-# extract_task >> transform_task >> load_task
+extract_task >> transform_task >> load_task
